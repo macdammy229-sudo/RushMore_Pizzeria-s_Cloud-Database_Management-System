@@ -1,0 +1,5 @@
+AZURE_DB_HOST=your-postgres-server-name.postgres.database.azure.com
+AZURE_DB_NAME=rushmore_db
+AZURE_DB_USER=rushmoreadmin
+AZURE_DB_PASSWORD=yourStrongPassword123!
+AZURE_DB_PORT=5432
