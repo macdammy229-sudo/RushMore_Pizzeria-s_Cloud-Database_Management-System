@@ -9,7 +9,13 @@ from psycopg2 import sql
 from psycopg2.extras import execute_batch
 
 load_dotenv()
+
+# Fixed seeds and date bounds make generated records repeatable across clean runs.
+SEED = 20261106
+random.seed(SEED)
+Faker.seed(SEED)
 fake = Faker("en_US")
+DATA_AS_OF = datetime(2025, 12, 31, 23, 59, 59)
 
 STORES = 4
 INGREDIENTS = 45
@@ -108,7 +114,7 @@ def seed_stores(cursor):
             addresses[index],
             cities[index],
             f"{phone_prefixes[index]}-{random.randint(100, 999)}-{random.randint(1000, 9999)}",
-            datetime.now() - timedelta(days=random.randint(365, 3650)),
+            DATA_AS_OF - timedelta(days=random.randint(365, 3650)),
         )
         for index in range(STORES)
     ]
@@ -126,12 +132,7 @@ def seed_ingredients(cursor):
 
 
 def seed_menu_items(cursor):
-    insert_rows(
-        cursor,
-        "menu_items",
-        ["name", "category", "size", "price"],
-        MENU_DATA,
-    )
+    insert_rows(cursor, "menu_items", ["name", "category", "size", "price"], MENU_DATA)
     cursor.execute("SELECT item_id FROM menu_items ORDER BY item_id")
     return [row[0] for row in cursor.fetchall()]
 
@@ -162,10 +163,12 @@ def seed_customers(cursor):
     for index in range(CUSTOMERS):
         first = fake.first_name()
         last = fake.last_name()
-        # Index-based suffixes guarantee uniqueness for the schema's UNIQUE columns.
         email = f"{first.lower()}.{last.lower()}.{index}@example.com"
         phone = f"555-{index // 10_000:04d}-{index % 10_000:04d}"
-        rows.append((first, last, email, phone, fake.date_time_this_decade()))
+        created_at = fake.date_time_between(
+            start_date=datetime(2020, 1, 1), end_date=DATA_AS_OF
+        )
+        rows.append((first, last, email, phone, created_at))
     insert_rows(
         cursor,
         "customers",
@@ -175,11 +178,12 @@ def seed_customers(cursor):
 
 
 def seed_orders(cursor):
+    start_of_year = datetime(DATA_AS_OF.year, 1, 1)
     rows = [
         (
             random.randint(1, CUSTOMERS),
             random.randint(1, STORES),
-            fake.date_time_this_year(),
+            fake.date_time_between(start_date=start_of_year, end_date=DATA_AS_OF),
             round(random.uniform(10, 60), 2),
         )
         for _ in range(ORDERS)

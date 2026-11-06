@@ -11,90 +11,46 @@ This repository contains the database design, Azure PostgreSQL deployment artifa
 
 ## Repository structure
 - `database/rushmore_schema.sql` — normalized PostgreSQL schema.
-- `database/quality_checks.sql` — validation and performance checks.
-- `scripts/populate.py` — synthetic data generation and bulk load script.
-- `.env.example` — Azure connection variables template.
+- `database/quality_checks.sql` — row-count, integrity, index, and query-plan validations.
+- `scripts/populate.py` — deterministic synthetic data generator and bulk loader.
+- `scripts/seed_and_validate.sh` — first-run workflow for schema creation, seeding, and validation.
+- `.env.example` — Azure connection settings template.
 - `requirements.txt` — Python dependencies.
-- `README.md` — setup, deployment, and validation guide.
 
 ## Schema overview
-The schema includes the following core entities:
-- `stores`
-- `customers`
-- `ingredients`
-- `menu_items`
-- `orders`
-- `order_items`
-- `menu_item_ingredients` (normalized recipe association)
+The schema models stores, customers, ingredients, menu items, orders, order items, and the normalized `menu_item_ingredients` recipe association.
 
-## Azure deployment steps
-1. In the Azure portal, create an Azure Database for PostgreSQL Flexible Server.
-2. Choose a region close to your users and set a pricing tier that supports your workload.
-3. Set admin username/password and configure network access according to your security model.
-4. Create the database `rushmore_db`.
-5. Copy `.env.example` to `.env` and set your server host, database name, username, and password.
+## Azure setup
+1. Create an Azure Database for PostgreSQL Flexible Server and configure network access for your client.
+2. Create a dedicated, empty database for this demo run. The workflow intentionally refuses to run if the `public` schema already contains relations.
+3. Copy `.env.example` to `.env` and set your host, database name, user, and password. Never commit `.env` or use production credentials for this demo.
 
-## Local configuration
-Create and activate a Python virtual environment, install dependencies, and configure the database environment:
+## Reproducible seed and validation
+From the repository root, create a Python environment, install dependencies, configure `.env`, then invoke the workflow:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
+# Edit .env with your dedicated empty test database settings.
+./scripts/seed_and_validate.sh
 ```
 
-On Windows PowerShell, activate with `.venv\\Scripts\\Activate.ps1` instead of the `source` command.
+On Windows, run these Bash commands in WSL or Git Bash. `psql` (PostgreSQL client tools) must be installed and available on `PATH`. The script reads `.env`, requires `psql` and Python, checks the target's `public` schema is empty, applies `database/rushmore_schema.sql`, runs `scripts/populate.py`, and then executes `database/quality_checks.sql` with `ON_ERROR_STOP` enabled. It never drops existing objects. If the run fails after creating the schema, use a fresh empty database for a clean retry.
 
-Edit `.env` with your Azure PostgreSQL connection values. The Python population script loads this file automatically. For the `psql` commands below, export its values into your shell first:
+The seeder fixes its random and Faker seeds and uses fixed date bounds, so every clean run produces repeatable synthetic values. It inserts 4 stores, 25 menu items, 45 ingredients, 6,500 customers, 30,000 orders, and exactly 75,000 order items. Validation raises an error if expected counts, uniqueness/integrity checks, or required indexes fail; it also prints row counts, diagnostic queries, and `EXPLAIN ANALYZE` plans.
 
-```bash
-set -a
-. ./.env
-set +a
-```
+The workflow is first-run-only by design. Do not point it at a populated or production database.
 
-Do not commit `.env` or put real credentials in source control.
-
-## Schema deployment
-Run the schema file against an empty `rushmore_db` database:
-
-```bash
-psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/rushmore_schema.sql
-```
-
-## Data population
-Run the population script once against the newly created schema. It generates 4 stores, 25 menu items, 45 ingredients, 6,500 customers, 30,000 orders, and exactly 75,000 order items. The data generator uses Faker for masked customer names and `psycopg2.extras.execute_batch` for efficient inserts.
-
-```bash
-python scripts/populate.py
-```
-
-The script reads Azure connection settings from `.env` (or from exported environment variables), and requires an empty schema to avoid duplicate rows.
-
-## Validation and optimization
-Run the validation SQL after the data load:
-
-```bash
-psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/quality_checks.sql
-```
-
-This validation covers row counts, duplicate detection, orphaned foreign keys, index presence, and example execution plans.
+## What the validation covers
+- Expected row counts for the seeded entities.
+- Duplicate customer emails/phones and store phone numbers.
+- Orphaned customer/store/order/menu-item/ingredient references.
+- Invalid order item quantities/prices and recipe quantities.
+- Presence of the schema's supporting indexes.
+- Example query plans for recent orders and store/date summaries.
 
 ## Notes
-- Synthetic customer data is generated for demonstration only; it is not real customer data.
-- Do not hardcode Azure credentials into source control.
-- The Azure infrastructure and screenshots are expected to be captured in the Azure portal and pgAdmin according to the project rubric.
-
-## Target workload
-- 4 stores
-- 25 menu items
-- 45 ingredients
-- 6,500 customers
-- 30,000 orders
-- 75,000 order items
-
-## Deliverables summary
-This repository includes the schema SQL, synthetic data population script, data-quality validation SQL, and setup and deployment instructions.
-
-The Azure server instance, connection screenshots, and database row-count screenshots are to be captured from the Azure portal and pgAdmin during the live deployment step.
+- The generated customer data is synthetic and for demonstration only.
+- The Azure server, connection, and row-count screenshots required by the capstone rubric must be captured separately in the Azure portal or pgAdmin.

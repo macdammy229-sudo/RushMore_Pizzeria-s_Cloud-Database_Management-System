@@ -1,0 +1,6 @@
+# Local secrets and Python artifacts
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*.log
