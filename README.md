@@ -1,56 +1,121 @@
 # RushMore Pizzeria Cloud Database Management System
 
-This repository contains the database design, Azure PostgreSQL deployment artifacts, and synthetic-data generation pipeline for RushMore Pizzeria's cloud migration proof-of-concept.
+This repository contains the database design, Azure PostgreSQL deployment artifacts, and synthetic-data generation pipeline for RushMore Pizzeria's cloud migration proof of concept.
 
 ## Project goals
-- Design a normalized relational schema for pizzeria operations.
+- Design a normalized PostgreSQL schema for pizzeria operations.
 - Deploy the database to Azure Database for PostgreSQL Flexible Server.
-- Load an empty schema into `rushmore_db`.
+- Load an empty schema into a dedicated `rushmore_db` database.
 - Generate realistic masked data with Python + Faker.
-- Validate row counts, referential integrity, and performance.
+- Validate row counts, referential integrity, indexes, and performance.
 
-## Repository structure
-- `database/rushmore_schema.sql` — normalized PostgreSQL schema.
-- `database/quality_checks.sql` — row-count, integrity, index, and query-plan validations.
-- `scripts/populate.py` — deterministic synthetic data generator and bulk loader.
-- `scripts/seed_and_validate.sh` — first-run workflow for schema creation, seeding, and validation.
-- `.env.example` — Azure connection settings template.
-- `requirements.txt` — Python dependencies.
+## What this project models
+The schema captures the core business flow of a pizza operation:
+- `stores` for branch locations
+- `customers` for order history and contact data
+- `ingredients` for inventory and recipe inputs
+- `menu_items` for catalog items and pricing
+- `orders` for customer transactions
+- `order_items` for line items on each order
+- `menu_item_ingredients` for normalized ingredient composition per menu item
 
-## Schema overview
-The schema models stores, customers, ingredients, menu items, orders, order items, and the normalized `menu_item_ingredients` recipe association.
+## Repository layout
+- `database/rushmore_schema.sql` — PostgreSQL schema definition and index setup
+- `database/quality_checks.sql` — row-count, integrity, and performance validation checks
+- `scripts/populate.py` — deterministic synthetic data generator for the pizzeria dataset
+- `scripts/seed_and_validate.sh` — end-to-end workflow for schema creation, seeding, and validation
+- `.env.example` — Azure connection template
+- `requirements.txt` — Python dependencies for the loader
 
 ## Azure setup
-1. Create an Azure Database for PostgreSQL Flexible Server and configure network access for your client.
-2. Create a dedicated, empty database for this demo run. The workflow intentionally refuses to run if the `public` schema already contains relations.
-3. Copy `.env.example` to `.env` and set your host, database name, user, and password. Never commit `.env` or use production credentials for this demo.
+1. Create an Azure Database for PostgreSQL Flexible Server.
+2. Configure firewall/network access so your local machine or dev environment can reach it.
+3. Create a dedicated, empty database for this demo workload.
+4. Copy `.env.example` to `.env` and fill in your Azure connection values.
 
-## Reproducible seed and validation
-From the repository root, create a Python environment, install dependencies, configure `.env`, then invoke the workflow:
+Important:
+- Do not commit your `.env` file.
+- Use a dedicated test database rather than a production database.
+- The workflow is designed to fail fast on a non-empty `public` schema to avoid accidental overwrite.
+
+## Environment configuration
+Create and activate a Python virtual environment, then install dependencies:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# Edit .env with your dedicated empty test database settings.
+```
+
+Edit `.env` with your database settings:
+
+```env
+AZURE_DB_HOST=your-server.postgres.database.azure.com
+AZURE_DB_NAME=rushmore_db
+AZURE_DB_USER=rushmoreadmin
+AZURE_DB_PASSWORD=yourStrongPassword!
+AZURE_DB_PORT=5432
+```
+
+If you are using `psql` from the shell, export the values before running commands:
+
+```bash
+set -a
+source ./.env
+set +a
+```
+
+## Reproducible seed and validation workflow
+This project includes a first-run workflow that is safe for a clean database:
+
+```bash
 ./scripts/seed_and_validate.sh
 ```
 
-On Windows, run these Bash commands in WSL or Git Bash. `psql` (PostgreSQL client tools) must be installed and available on `PATH`. The script reads `.env`, requires `psql` and Python, checks the target's `public` schema is empty, applies `database/rushmore_schema.sql`, runs `scripts/populate.py`, and then executes `database/quality_checks.sql` with `ON_ERROR_STOP` enabled. It never drops existing objects. If the run fails after creating the schema, use a fresh empty database for a clean retry.
+The script performs the following in order:
+1. Verifies that the target database is empty enough to safely initialize.
+2. Runs `database/rushmore_schema.sql`.
+3. Executes `scripts/populate.py` to generate synthetic data.
+4. Runs `database/quality_checks.sql` to verify integrity and performance assumptions.
 
-The seeder fixes its random and Faker seeds and uses fixed date bounds, so every clean run produces repeatable synthetic values. It inserts 4 stores, 25 menu items, 45 ingredients, 6,500 customers, 30,000 orders, and exactly 75,000 order items. Validation raises an error if expected counts, uniqueness/integrity checks, or required indexes fail; it also prints row counts, diagnostic queries, and `EXPLAIN ANALYZE` plans.
+This workflow is intentionally first-run-only. It refuses to continue if the `public` schema is not empty.
 
-The workflow is first-run-only by design. Do not point it at a populated or production database.
+## Data generation details
+The synthetic seed is fixed and deterministic for clean runs:
+- 4 stores
+- 25 menu items
+- 45 ingredients
+- 6,500 customers
+- 30,000 orders
+- 75,000 order items
 
-## What the validation covers
-- Expected row counts for the seeded entities.
-- Duplicate customer emails/phones and store phone numbers.
-- Orphaned customer/store/order/menu-item/ingredient references.
-- Invalid order item quantities/prices and recipe quantities.
-- Presence of the schema's supporting indexes.
-- Example query plans for recent orders and store/date summaries.
+The generator uses Faker for masked customer data and `psycopg2.extras.execute_batch` for efficient bulk inserts. It also sets fixed random seeds so repeated runs against a clean database are reproducible.
+
+## Validation checks
+`database/quality_checks.sql` validates:
+- expected row counts for each table
+- duplicate customer email/phone values and duplicate store phone numbers
+- orphaned orders, order items, and recipe associations
+- invalid quantities or negative values
+- required supporting indexes
+- example `EXPLAIN ANALYZE` queries for recent-order and store-summary reporting
+
+If any check fails, the script exits with a non-zero status and raises an error.
+
+## Local run example
+For a manual run without the helper script, use the following sequence against a fresh database:
+
+```bash
+psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/rushmore_schema.sql
+python scripts/populate.py
+psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/quality_checks.sql
+```
 
 ## Notes
-- The generated customer data is synthetic and for demonstration only.
-- The Azure server, connection, and row-count screenshots required by the capstone rubric must be captured separately in the Azure portal or pgAdmin.
+- Synthetic customer data is for demonstration only and is intentionally masked.
+- The Azure database connection and row-count screenshots required by the capstone rubric should be captured separately in the Azure portal and pgAdmin.
+- Do not rerun this workflow on a populated or production database.
+
+## Deliverables summary
+This repository includes the schema SQL, synthetic data population script, quality-validation SQL, and setup instructions needed for the cloud database proof of concept.
