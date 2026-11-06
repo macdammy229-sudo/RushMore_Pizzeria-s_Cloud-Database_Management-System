@@ -1,5 +1,3 @@
-AZURE_DB_HOST=your-postgres-server-name.postgres.database.azure.com
-AZURE_DB_NAME=rushmore_db
-AZURE_DB_USER=rushmoreadmin
-AZURE_DB_PASSWORD=yourStrongPassword123!
-AZURE_DB_PORT=5432
+psycopg2-binary>=2.9,<3.0
+Faker>=30.0,<40.0
+python-dotenv>=1.0,<2.0

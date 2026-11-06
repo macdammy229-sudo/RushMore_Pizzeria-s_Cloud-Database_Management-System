@@ -1,4 +1,4 @@
-# RushMore Pizzeria schema
+-- RushMore Pizzeria schema
 
 BEGIN;
 
