@@ -37,6 +37,13 @@ The ERD is included at `docs/rushmore_erd.svg`.
 4. Create the database `rushmore_db`.
 5. Copy the Azure server host, database name, username, and password into `.env`.
 
+### Azure configuration example
+- Server name: `rushmore`
+- Administrator login: `RushMore`
+- Location: `Canada Central`
+- Database name: `rushmore_db`
+- Host: `rushmore.postgres.database.azure.com`
+
 ## Local configuration
 1. Create a Python virtual environment.
 2. Install project dependencies:
@@ -50,9 +57,9 @@ The ERD is included at `docs/rushmore_erd.svg`.
 
 Example `.env` values:
 ```env
-AZURE_DB_HOST=rushmore-prod.postgres.database.azure.com
+AZURE_DB_HOST=rushmore.postgres.database.azure.com
 AZURE_DB_NAME=rushmore_db
-AZURE_DB_USER=rushmoreadmin
+AZURE_DB_USER=RushMore
 AZURE_DB_PASSWORD=yourStrongPassword!
 AZURE_DB_PORT=5432
 ```
