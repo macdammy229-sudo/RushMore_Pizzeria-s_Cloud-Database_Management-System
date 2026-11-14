@@ -99,6 +99,28 @@ This structure reflects a normalized design that separates master data from tran
 
 ---
 
+## 🔗 Foreign-Key Rules
+
+Foreign keys in `database/rushmore_schema.sql` enforce referential integrity. The delete actions below describe what happens when a referenced parent row is deleted:
+
+| Foreign-key relationship | Required? | Delete rule | What the rule means |
+| --- | --- | --- | --- |
+| `menu_item_ingredients.menu_item_id` → `menu_items.item_id` | Yes | `ON DELETE CASCADE` | Deleting a menu item also deletes its ingredient-recipe rows. |
+| `menu_item_ingredients.ingredient_id` → `ingredients.ingredient_id` | Yes | `ON DELETE CASCADE` | Deleting an ingredient also deletes recipe rows that reference it. |
+| `orders.customer_id` → `customers.customer_id` | No (nullable) | `ON DELETE SET NULL` | Deleting a customer keeps their orders, but clears the customer reference. |
+| `orders.store_id` → `stores.store_id` | Yes | `ON DELETE RESTRICT` | A store cannot be deleted while orders reference it. |
+| `order_items.order_id` → `orders.order_id` | Yes | `ON DELETE CASCADE` | Deleting an order also deletes its order-item rows. |
+| `order_items.item_id` → `menu_items.item_id` | Yes | `ON DELETE RESTRICT` | A menu item cannot be deleted while it appears in an order item. |
+
+Additional integrity rules:
+
+- Each foreign key must reference an existing row in its parent table; invalid or orphaned references are rejected.
+- Required foreign-key columns are `NOT NULL`. `orders.customer_id` is nullable so an order can remain after its customer is deleted.
+- The schema does not specify `ON UPDATE`; PostgreSQL's default `NO ACTION` behavior applies, preventing a referenced key from being changed when dependent rows would be left invalid.
+- `order_items.quantity` must be greater than zero, and `order_items.unit_price` must be zero or greater, as enforced by check constraints.
+
+---
+
 ## ☁️ Azure Deployment Workflow
 
 1. Create an Azure Database for PostgreSQL Flexible Server.
