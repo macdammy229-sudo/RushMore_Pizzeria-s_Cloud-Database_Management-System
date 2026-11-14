@@ -44,6 +44,19 @@ The project is designed to demonstrate a realistic end-to-end process:
 
 ---
 
+## 🎯 Expected Project Outcome
+
+By the end of this project, the database is expected to provide a robust, scalable, and cloud-ready foundation for RushMore Pizzeria operations. The outcome includes:
+
+- a normalized PostgreSQL schema that reflects real-world pizzeria business rules
+- enforced referential integrity through foreign keys, cascade rules, and validation checks
+- a multi-store transactional model for customers, orders, menu items, and ingredients
+- realistic synthetic data generation for testing, demonstration, and performance analysis
+- a documented Azure deployment workflow for migrating the database to a cloud environment
+- proof that the system is ready for operational validation, optimization, and future extension
+
+---
+
 ## 🧱 Key Database Components
 
 <table>
