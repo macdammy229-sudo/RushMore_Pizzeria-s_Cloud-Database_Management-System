@@ -1,54 +1,131 @@
-# RushMore Pizzeria Cloud Database Management System
+<div align="center">
+  <h1>
+    <span style="color:#FF7A18;">RushMore</span>
+    <span style="color:#2F80ED;">Pizzeria</span>
+    <span style="color:#00B894;">Cloud Database Management System</span>
+  </h1>
+  <p>
+    <strong><span style="color:#6C63FF;">Designing RushMore Pizzeria's Cloud Database Management System</span></strong>
+  </p>
+</div>
 
-This repository contains the database design, Azure PostgreSQL deployment artifacts, and synthetic-data generation pipeline for RushMore Pizzeria's cloud migration proof-of-concept.
+<p>
+  <span style="color:#00A676;">✅</span> <strong>Project Objective:</strong> Design and deploy a cloud-ready PostgreSQL database for a modern pizzeria operation, including schema design, synthetic data generation, validation, and Azure-based deployment.
+</p>
 
-## Project goals
-- Design a normalized relational schema for pizzeria operations.
-- Deploy the database to Azure Database for PostgreSQL Flexible Server.
-- Load an empty schema into `rushmore_db`.
-- Generate realistic masked data with Python + Faker.
-- Validate row counts, referential integrity, and performance.
+<p>
+  <span style="color:#FFB000;">⚙️</span> <strong>Core Focus:</strong> Normalized relational modeling, production-style data pipeline orchestration, performance checks, and migration readiness for a real-world business scenario.
+</p>
 
-## Repository structure
-- `database/rushmore_schema.sql` — normalized PostgreSQL schema.
-- `database/quality_checks.sql` — validation and performance checks.
-- `scripts/populate.py` — synthetic data generation and bulk load script.
-- `docs/rushmore_erd.svg` — entity relationship diagram.
-- `.env.example` — Azure connection variables template.
-- `requirements.txt` — Python dependencies.
-- `README.md` — setup, deployment, and validation guide.
+---
 
-## Schema overview
-The schema includes the following core entities:
+## 📌 Project Overview
+
+This repository contains the database design, deployment assets, and synthetic-data pipeline for RushMore Pizzeria's cloud migration proof-of-concept. The solution models pizzeria operations as a normalized relational system and supports deployment to Azure Database for PostgreSQL Flexible Server.
+
+The project is designed to demonstrate a realistic end-to-end process:
+- schema development
+- database provisioning
+- environment configuration
+- sample data generation
+- validation and optimization checks
+- cloud migration readiness
+
+---
+
+## 🎯 Business Goals
+
+- Create a normalized relational schema for pizzeria operations
+- Support multi-store ordering and inventory tracking
+- Manage customer activity, menu data, and order fulfillment
+- Generate realistic masked data for testing and demonstration
+- Validate referential integrity and workload performance
+- Prepare for deployment on Azure PostgreSQL infrastructure
+
+---
+
+## 🧱 Key Database Components
+
+<table>
+  <tr>
+    <td bgcolor="#1F2937"><font color="#FFFFFF"><strong>Component</strong></font></td>
+    <td bgcolor="#1F2937"><font color="#FFFFFF"><strong>Description</strong></font></td>
+  </tr>
+  <tr>
+    <td bgcolor="#E8F5E9"><font color="#0B3B2E">Schema</font></td>
+    <td>Normalized PostgreSQL schema for stores, customers, menu, inventory, and orders.</td>
+  </tr>
+  <tr>
+    <td bgcolor="#EAF2FF"><font color="#1E3A8A">Data Pipeline</font></td>
+    <td>Python script for generating realistic synthetic records and loading them into the database.</td>
+  </tr>
+  <tr>
+    <td bgcolor="#FFF4E5"><font color="#92400E">Validation</font></td>
+    <td>SQL quality checks for row counts, duplicates, orphaned records, and performance tuning checks.</td>
+  </tr>
+  <tr>
+    <td bgcolor="#FDECEC"><font color="#991B1B">Cloud Deployment</font></td>
+    <td>Azure PostgreSQL configuration and deployment steps tailored for the project workflow.</td>
+  </tr>
+</table>
+
+---
+
+## 📁 Repository Structure
+
+- `database/rushmore_schema.sql` — normalized PostgreSQL schema for the pizzeria domain
+- `database/quality_checks.sql` — validation and performance checks
+- `scripts/populate.py` — synthetic-data generation and bulk load script
+- `docs/rushmore_erd.svg` — entity relationship diagram
+- `.env.example` — sample Azure database connection variables
+- `requirements.txt` — Python dependencies for the data generator
+- `README.md` — setup, deployment, and validation documentation
+
+---
+
+## 🧩 Schema Overview
+
+The schema includes the following major entities:
+
 - `stores`
 - `customers`
 - `ingredients`
 - `menu_items`
 - `orders`
 - `order_items`
-- `menu_item_ingredients` (normalized recipe association)
+- `menu_item_ingredients`
 
-The ERD is included at `docs/rushmore_erd.svg`.
+This structure reflects a normalized design that separates master data from transactional records while maintaining clear relationships between menu items, ingredients, orders, and stores.
 
-## Azure deployment steps
-1. In the Azure portal, create an Azure Database for PostgreSQL Flexible Server.
-2. Choose a region close to your users and set a pricing tier that supports your workload.
-3. Set admin username/password and enable public access or private access based on your security model.
-4. Create the database `rushmore_db`.
-5. Copy the Azure server host, database name, username, and password into `.env`.
+---
 
-## Local configuration
+## ☁️ Azure Deployment Workflow
+
+1. Create an Azure Database for PostgreSQL Flexible Server.
+2. Select a region close to the intended user base and choose an appropriate pricing tier.
+3. Configure admin credentials and access settings.
+4. Create the database named `rushmore_db`.
+5. Copy the server host, database name, username, and password into your local `.env` file.
+
+---
+
+## 🛠️ Local Configuration
+
 1. Create a Python virtual environment.
 2. Install project dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Copy `.env.example` to `.env` and fill in your Azure values:
-   ```bash
-   cp .env.example .env
-   ```
 
-Example `.env` values:
+```bash
+pip install -r requirements.txt
+```
+
+3. Copy the example environment file and populate it with your Azure connection details:
+
+```bash
+cp .env.example .env
+```
+
+Example values:
+
 ```env
 AZURE_DB_HOST=rushmore-prod.postgres.database.azure.com
 AZURE_DB_NAME=rushmore_db
@@ -57,44 +134,55 @@ AZURE_DB_PASSWORD=yourStrongPassword!
 AZURE_DB_PORT=5432
 ```
 
-## Schema deployment
-Run the schema file against the Azure database:
+---
+
+## 🚀 Schema Deployment
+
+Run the schema SQL file against the Azure PostgreSQL instance:
+
 ```bash
 psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/rushmore_schema.sql
 ```
 
-## Data population
+---
+
+## 🧪 Data Population
+
 Execute the population script:
+
 ```bash
 python scripts/populate.py
 ```
 
-The script:
-- reads credentials from environment variables
-- inserts stores, ingredients, menu items, customers, orders, and order items
-- uses `psycopg2.extras.execute_batch` for efficient bulk inserts
-- targets the scale described in the project brief
+The script is responsible for:
+- reading configuration from environment variables
+- building realistic data for stores, ingredients, menu items, customers, orders, and order items
+- using Python and Faker to generate masked sample data
+- loading records efficiently with bulk insert utilities
 
-## Validation and optimization
-Run the validation SQL after the data load:
+---
+
+## ✅ Validation and Optimization
+
+After the data load, run the quality checks:
+
 ```bash
 psql "host=$AZURE_DB_HOST port=$AZURE_DB_PORT dbname=$AZURE_DB_NAME user=$AZURE_DB_USER password=$AZURE_DB_PASSWORD sslmode=require" -f database/quality_checks.sql
 ```
 
-This validation covers:
-- row counts
+The validation process covers:
+- row count verification
 - duplicate detection
 - orphaned foreign keys
-- index presence
-- example execution plans
+- presence of performance-critical indexes
+- example execution plan review
 
-## Notes
-- Sensitive customer data is intentionally masked using Faker; this is a demo dataset only.
-- Do not hardcode Azure credentials into source control.
-- The Azure infrastructure and screenshots are expected to be captured in the Azure portal and pgAdmin according to the project rubric.
+---
 
-## Target workload
-The final populated dataset is sized to represent a realistic fast-moving pizzeria operation:
+## 📊 Target Workload
+
+The final populated dataset is intended to represent a realistic fast-moving pizzeria operation:
+
 - 4 stores
 - 25 menu items
 - 45 ingredients
@@ -102,12 +190,28 @@ The final populated dataset is sized to represent a realistic fast-moving pizzer
 - 30,000 orders
 - ~75,000 order items
 
-## Deliverables summary
-This repository includes the core deliverables required for the capstone:
-- ERD as SVG
-- schema SQL
-- populate script
-- data-quality validation SQL
-- setup and deployment instructions
+---
 
-The Azure server instance, connection screenshots, and database row-count screenshots are to be captured from the Azure portal and pgAdmin during the live deployment step.
+## 🧠 Notes
+
+- Sensitive customer data is intentionally masked to preserve privacy and demonstrate realistic but non-production data.
+- Azure credentials should never be hardcoded into source control.
+- The setup and screenshots for the Azure server and database validation are expected to be captured during the live deployment stage.
+
+---
+
+## 🏁 Deliverables Summary
+
+This repository includes the essential project artifacts:
+- ERD diagram
+- PostgreSQL schema
+- population script
+- validation SQL
+- Azure configuration guidance
+- project documentation
+
+<p align="center">
+  <span style="color:#FF7A18;">⭐</span>
+  <span style="color:#2F80ED;">Built for cloud migration and database design learning</span>
+  <span style="color:#00B894;">⭐</span>
+</p>
